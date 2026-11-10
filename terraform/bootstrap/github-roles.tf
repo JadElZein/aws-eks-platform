@@ -50,8 +50,7 @@ resource "aws_iam_role_policy_attachment" "github" {
   policy_arn = each.value.policy_arn
 }
 
-# Even a plan writes a lock file to the state bucket, so the read-only
-# role needs write access to that file only.
+# plan takes the state lock, so it needs write access to the .tflock file
 resource "aws_iam_role_policy" "plan_state_lock" {
   name = "state-lock-file"
   role = aws_iam_role.github["plan"].id

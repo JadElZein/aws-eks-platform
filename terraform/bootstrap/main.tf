@@ -22,7 +22,7 @@ provider "aws" {
   region = var.region
 }
 
-# Short random suffix: bucket names are global, so they must be unique
+# bucket names are global, so add a random suffix
 resource "random_id" "suffix" {
   byte_length = 4
 }
@@ -31,7 +31,6 @@ resource "aws_s3_bucket" "tfstate" {
   bucket = "jadelzein-eks-platform-tfstate-${random_id.suffix.hex}"
 }
 
-# Keep old versions of the state file, so a bad write can be rolled back
 resource "aws_s3_bucket_versioning" "tfstate" {
   bucket = aws_s3_bucket.tfstate.id
 
@@ -40,7 +39,6 @@ resource "aws_s3_bucket_versioning" "tfstate" {
   }
 }
 
-# Encrypt state at rest
 resource "aws_s3_bucket_server_side_encryption_configuration" "tfstate" {
   bucket = aws_s3_bucket.tfstate.id
 
@@ -51,7 +49,6 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "tfstate" {
   }
 }
 
-# State must never be public
 resource "aws_s3_bucket_public_access_block" "tfstate" {
   bucket                  = aws_s3_bucket.tfstate.id
   block_public_acls       = true
