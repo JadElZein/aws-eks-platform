@@ -13,6 +13,9 @@ module "eks" {
 
   enable_cluster_creator_admin_permissions = true
 
+  enabled_log_types                      = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
+  cloudwatch_log_group_retention_in_days = 365
+
   addons = {
     coredns    = {}
     kube-proxy = {}
