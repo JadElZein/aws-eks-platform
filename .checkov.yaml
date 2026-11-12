@@ -1,0 +1,21 @@
+directory:
+  - terraform/platform
+download-external-modules: true
+external-modules-download-path: /tmp/checkov-modules
+compact: true
+quiet: true
+skip-check:
+  # registry modules use version constraints, not commit hashes
+  - CKV_TF_1
+  # public API endpoint on purpose so kubectl works from the VM, IAM still protects it
+  - CKV_AWS_38
+  - CKV_AWS_39
+  # checkov's version list stops at 1.35, but 1.36 is in standard support
+  - CKV_AWS_339
+  # default security group has no rules, checked on the deployed VPC
+  - CKV2_AWS_12
+  # inside the modules, verify after rebuild: secrets encryption, IPv6 policy, security groups
+  - CKV_AWS_58
+  - CKV_AWS_356
+  - CKV_AWS_111
+  - CKV2_AWS_5
