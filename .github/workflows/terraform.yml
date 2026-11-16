@@ -33,6 +33,10 @@ jobs:
         working-directory: terraform/platform
     steps:
       - uses: actions/checkout@v6
+      - name: Mask role ID
+        env:
+          ROLE_ID: ${{ secrets.AWS_PLAN_ROLE_ID }}
+        run: echo "::add-mask::$ROLE_ID"
       - uses: aws-actions/configure-aws-credentials@cbe3b392738ccf3f987d68400dafcf4b0624a56c # v6.2.4
         with:
           role-to-assume: ${{ secrets.AWS_PLAN_ROLE_ARN }}
