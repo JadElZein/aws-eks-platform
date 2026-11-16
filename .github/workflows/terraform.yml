@@ -1,0 +1,24 @@
+name: terraform
+
+on:
+  pull_request:
+    paths:
+      - terraform/platform/**
+      - .checkov.yaml
+      - .github/workflows/terraform.yml
+
+permissions:
+  contents: read
+
+jobs:
+  checkov:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install Checkov
+        run: pip install checkov==3.4.5
+      - name: Run Checkov
+        run: checkov --config-file .checkov.yaml
