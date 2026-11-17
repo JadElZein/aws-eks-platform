@@ -1,0 +1,72 @@
+name: push
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - app/**
+      - .github/workflows/push.yml
+
+permissions: {}
+
+jobs:
+  build-scan:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - name: Build image
+        run: docker build -t eks-platform-app:${{ github.sha }} app
+      - name: Scan image
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        with:
+          image-ref: eks-platform-app:${{ github.sha }}
+          version: v0.69.3
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+      - name: Save image
+        run: docker save eks-platform-app:${{ github.sha }} -o image.tar
+      - uses: actions/upload-artifact@v7
+        with:
+          name: image
+          path: image.tar
+          retention-days: 1
+
+  push:
+    needs: build-scan
+    runs-on: ubuntu-24.04
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: image
+      - name: Load image
+        run: docker load -i image.tar
+      - name: Mask role ID
+        env:
+          ROLE_ID: ${{ secrets.AWS_PUSH_ROLE_ID }}
+        run: echo "::add-mask::$ROLE_ID"
+      - uses: aws-actions/configure-aws-credentials@cbe3b392738ccf3f987d68400dafcf4b0624a56c # v6.2.4
+        with:
+          role-to-assume: ${{ secrets.AWS_PUSH_ROLE_ARN }}
+          aws-region: us-east-1
+          mask-aws-account-id: true
+      - name: Push image
+        env:
+          SHA: ${{ github.sha }}
+        run: |
+          REGISTRY="$(aws sts get-caller-identity --query Account --output text).dkr.ecr.us-east-1.amazonaws.com"
+          if out=$(aws ecr describe-images --repository-name eks-platform-app --image-ids imageTag="$SHA" 2>&1); then
+            echo "tag already in ECR, skipping push"
+            exit 0
+          fi
+          if ! grep -q ImageNotFoundException <<< "$out"; then
+            echo "$out"
+            exit 1
+          fi
+          aws ecr get-login-password | docker login --username AWS --password-stdin "$REGISTRY"
+          docker tag "eks-platform-app:$SHA" "$REGISTRY/eks-platform-app:$SHA"
+          docker push "$REGISTRY/eks-platform-app:$SHA"
