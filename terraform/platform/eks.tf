@@ -17,7 +17,10 @@ module "eks" {
   cloudwatch_log_group_retention_in_days = 365
 
   addons = {
-    coredns    = {}
+    coredns = {}
+    eks-pod-identity-agent = {
+      before_compute = true
+    }
     kube-proxy = {}
     vpc-cni = {
       before_compute = true
