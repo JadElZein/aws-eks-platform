@@ -20,6 +20,7 @@ terraform.rc
 .env
 .aws/
 tfplan
+*.tfplan
 tfplan
 .venv/
 __pycache__/
